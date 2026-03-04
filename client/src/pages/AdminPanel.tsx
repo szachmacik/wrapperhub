@@ -11,12 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  ArrowLeft, BarChart3, Bot, Code2, FileText, Image, Key, Plus,
-  Settings, Trash2, Users, Zap, TrendingUp, DollarSign, Activity, Edit,
+  ArrowLeft, BarChart3, Bot, Code2, FileText, ImageIcon, Key, Plus,
+  Settings, Trash2, Users, Zap, TrendingUp, DollarSign, Activity, Edit, Download, Rocket,
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+} from "recharts";
 
 export default function AdminPanel() {
   const { user } = useAuth({ redirectOnUnauthenticated: true });
@@ -38,7 +41,12 @@ export default function AdminPanel() {
             <Settings className="h-4 w-4" />
             <h1 className="font-semibold">Admin Panel</h1>
           </div>
-          <Badge variant="secondary" className="ml-auto">Admin</Badge>
+          <div className="ml-auto flex items-center gap-2">
+            <Button size="sm" onClick={() => navigate("/admin/quick-deploy")}>
+              <Rocket className="h-4 w-4 mr-2" /> Quick Deploy
+            </Button>
+            <Badge variant="secondary">Admin</Badge>
+          </div>
         </div>
       </header>
 
@@ -66,12 +74,61 @@ export default function AdminPanel() {
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 function OverviewTab() {
   const { data, isLoading } = trpc.plans.admin.usageStats.useQuery({ days: 30 });
+  const { data: logsRaw } = trpc.plans.admin.usageLogs.useQuery({ limit: 500 });
+  const logsData = logsRaw ?? [];
 
   const stats = data?.stats;
   const byWrapper = data?.byWrapper ?? [];
 
+  // Build daily chart data from logs
+  const dailyData = useMemo(() => {
+    if (!logsData?.length) return [];
+    const map = new Map<string, { date: string; requests: number; revenue: number; margin: number }>();
+    for (const item of logsData) {
+      const entry = item.log;
+      const date = new Date(entry.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const existing = map.get(date) ?? { date, requests: 0, revenue: 0, margin: 0 };
+      map.set(date, {
+        date,
+        requests: existing.requests + 1,
+        revenue: existing.revenue + parseFloat(entry.totalChargedUsd ?? "0"),
+        margin: existing.margin + parseFloat(entry.marginUsd ?? "0"),
+      });
+    }
+    return Array.from(map.values()).slice(-14).map((d) => ({
+      ...d,
+      revenue: parseFloat(d.revenue.toFixed(4)),
+      margin: parseFloat(d.margin.toFixed(4)),
+    }));
+  }, [logsData]);
+
+  const handleExportCSV = () => {
+    if (!logsData?.length) { toast.error("No data to export"); return; }
+    const headers = ["Date", "User", "Wrapper", "Type", "Tokens", "Cost USD", "Margin USD", "Charged USD", "Status", "Duration ms"];
+    const rows = logsData.map(({ log: l, wrapper: w, user: u }) => [
+      new Date(l.createdAt).toISOString(),
+      u.name ?? u.email ?? l.userId,
+      w.name,
+      l.requestType,
+      (l.inputTokens ?? 0) + (l.outputTokens ?? 0),
+      l.baseCostUsd,
+      l.marginUsd,
+      l.totalChargedUsd,
+      l.status,
+      l.durationMs,
+    ]);
+    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `wrapperhub-logs-${Date.now()}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV exported!");
+  };
+
   return (
     <div className="space-y-6">
+      {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Total Requests", value: stats?.totalRequests ?? 0, icon: <Zap className="h-4 w-4" />, color: "text-blue-500" },
@@ -89,36 +146,101 @@ function OverviewTab() {
         ))}
       </div>
 
+      {/* Revenue chart */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Usage by Wrapper</CardTitle>
-          <CardDescription>Last 30 days</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-base">Revenue & Margin</CardTitle>
+            <CardDescription>Last 14 days</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleExportCSV}>
+            <Download className="h-4 w-4 mr-2" /> Export CSV
+          </Button>
         </CardHeader>
         <CardContent>
-          {byWrapper.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No usage data yet.</p>
+          {dailyData.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No usage data yet. Start using tools to see stats.</p>
           ) : (
-            <div className="space-y-3">
-              {byWrapper.map((item) => (
-                <div key={item.wrapperId} className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium">{item.wrapperName}</span>
-                      <span className="text-xs text-muted-foreground">{item.totalRequests} req · ${parseFloat(item.totalRevenue ?? "0").toFixed(2)}</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full"
-                        style={{ width: `${Math.min(100, (Number(item.totalRequests) / Math.max(...byWrapper.map(b => Number(b.totalRequests)))) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={dailyData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorMargin" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#059669" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#059669" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(v: number) => `$${v.toFixed(4)}`} />
+                <Legend />
+                <Area type="monotone" dataKey="revenue" stroke="#7c3aed" fill="url(#colorRevenue)" name="Revenue" />
+                <Area type="monotone" dataKey="margin" stroke="#059669" fill="url(#colorMargin)" name="Margin" />
+              </AreaChart>
+            </ResponsiveContainer>
           )}
         </CardContent>
       </Card>
+
+      {/* Usage by wrapper */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Requests by Wrapper</CardTitle>
+            <CardDescription>Last 30 days</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {byWrapper.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No data yet.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={byWrapper.map((b) => ({ name: b.wrapperName?.slice(0, 12), requests: Number(b.totalRequests) }))}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Bar dataKey="requests" fill="#7c3aed" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Revenue by Wrapper</CardTitle>
+            <CardDescription>Last 30 days</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {byWrapper.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No data yet.</p>
+            ) : (
+              <div className="space-y-3 pt-2">
+                {byWrapper.map((item) => (
+                  <div key={item.wrapperId} className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium">{item.wrapperName}</span>
+                        <span className="text-xs text-muted-foreground">${parseFloat(item.totalRevenue ?? "0").toFixed(4)}</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ width: `${Math.min(100, (Number(item.totalRequests) / Math.max(1, ...byWrapper.map(b => Number(b.totalRequests)))) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -133,7 +255,7 @@ function WrappersTab() {
   const [editWrapper, setEditWrapper] = useState<typeof wrappers extends (infer T)[] | undefined ? T | null : null>(null);
   const [open, setOpen] = useState(false);
 
-  const ICONS: Record<string, React.ReactNode> = { chat: <Bot className="h-4 w-4" />, image: <Image className="h-4 w-4" />, document: <FileText className="h-4 w-4" />, code: <Code2 className="h-4 w-4" /> };
+  const ICONS: Record<string, React.ReactNode> = { chat: <Bot className="h-4 w-4" />, image: <ImageIcon className="h-4 w-4" />, document: <FileText className="h-4 w-4" />, code: <Code2 className="h-4 w-4" /> };
 
   const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

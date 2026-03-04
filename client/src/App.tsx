@@ -10,6 +10,8 @@ import ToolPage from "./pages/ToolPage";
 import UsageHistory from "./pages/UsageHistory";
 import Billing from "./pages/Billing";
 import AdminPanel from "./pages/AdminPanel";
+import Onboarding from "./pages/Onboarding";
+import QuickDeploy from "./pages/QuickDeploy";
 
 function Router() {
   return (
@@ -20,6 +22,9 @@ function Router() {
       <Route path="/dashboard/history" component={UsageHistory} />
       <Route path="/dashboard/billing" component={Billing} />
       <Route path="/admin" component={AdminPanel} />
+      <Route path="/onboarding" component={Onboarding} />
+      <Route path="/admin/quick-deploy" component={QuickDeploy} />
+      <Route path="/billing" component={Billing} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

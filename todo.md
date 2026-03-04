@@ -53,4 +53,17 @@
 - [x] Testy vitest — routery, logika marży, limity (6 testów, 2 pliki)
 - [x] Google Fonts Inter + kolor primary fioletowy
 - [x] TypeScript — brak błędów
-- [ ] Checkpoint i deploy
+- [x] Checkpoint i deploy
+
+## Faza 9: Rozbudowa autonomiczna
+- [x] Streaming chat (SSE endpoint + frontend streaming)
+- [x] Markdown rendering w chat (Streamdown)
+- [x] Onboarding wizard dla nowego użytkownika
+- [x] Wykresy Recharts w panelu admina (przychód/użycie w czasie)
+- [x] Eksport CSV logów użycia (admin)
+- [x] Szybki wizard "Deploy Wrapper" w adminie
+- [ ] Strona profilu użytkownika
+- [ ] Powiadomienia admina (nowy użytkownik, nowa płatność)
+- [ ] Responsywność mobile (hamburger menu, mobile dashboard)
+- [ ] Strona 404 + error boundaries
+- [x] Konwersacje: lista historii w sidebar chatu

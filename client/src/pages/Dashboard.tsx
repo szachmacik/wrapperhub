@@ -6,14 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Bot, Code2, FileText, Image, Sparkles, LogOut, Settings,
-  BarChart3, MessageSquare, Crown, ArrowRight, Zap, History,
+  Bot, Code2, FileText, ImageIcon, Sparkles, LogOut,
+  BarChart3, MessageSquare, Crown, ArrowRight, Zap, History, Rocket,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   chat: <MessageSquare className="h-5 w-5" />,
-  image: <Image className="h-5 w-5" />,
+  image: <ImageIcon className="h-5 w-5" />,
   document: <FileText className="h-5 w-5" />,
   code: <Code2 className="h-5 w-5" />,
 };
@@ -55,6 +55,9 @@ export default function Dashboard() {
               <div className="pt-4 pb-1 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Admin</div>
               <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/admin")}>
                 <BarChart3 className="h-4 w-4" /> Admin Panel
+              </Button>
+              <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/admin/quick-deploy")}>
+                <Rocket className="h-4 w-4" /> Quick Deploy
               </Button>
             </>
           )}
