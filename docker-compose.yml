@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  # ─── MySQL Database ──────────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: wrapperhub-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-wrapperhub_root}
+      MYSQL_DATABASE: wrapperhub
+      MYSQL_USER: wrapperhub
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-wrapperhub_pass}
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-wrapperhub_root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ─── WrapperHub App ──────────────────────────────────────────────────────────
+  app:
+    image: node:22-alpine
+    container_name: wrapperhub-app
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: mysql://wrapperhub:${MYSQL_PASSWORD:-wrapperhub_pass}@db:3306/wrapperhub
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_please}
+      # Manus OAuth (optional - for cloud auth)
+      VITE_APP_ID: ${VITE_APP_ID:-}
+      OAUTH_SERVER_URL: ${OAUTH_SERVER_URL:-}
+      VITE_OAUTH_PORTAL_URL: ${VITE_OAUTH_PORTAL_URL:-}
+      OWNER_OPEN_ID: ${OWNER_OPEN_ID:-}
+      OWNER_NAME: ${OWNER_NAME:-admin}
+      # AI API Keys
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Stripe (optional)
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      VITE_STRIPE_PUBLISHABLE_KEY: ${VITE_STRIPE_PUBLISHABLE_KEY:-}
+      # Built-in Forge API (optional)
+      BUILT_IN_FORGE_API_URL: ${BUILT_IN_FORGE_API_URL:-}
+      BUILT_IN_FORGE_API_KEY: ${BUILT_IN_FORGE_API_KEY:-}
+      VITE_FRONTEND_FORGE_API_KEY: ${VITE_FRONTEND_FORGE_API_KEY:-}
+      VITE_FRONTEND_FORGE_API_URL: ${VITE_FRONTEND_FORGE_API_URL:-}
+    command: >
+      sh -c "
+        npm install -g pnpm &&
+        pnpm install &&
+        pnpm db:push &&
+        pnpm build &&
+        pnpm start
+      "
+    ports:
+      - "${PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:
+    driver: local
