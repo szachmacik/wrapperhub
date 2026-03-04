@@ -2,6 +2,7 @@ import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
+import { notifyOwner } from "./notification";
 import { sdk } from "./sdk";
 
 function getQueryParam(req: Request, key: string): string | undefined {
@@ -28,6 +29,10 @@ export function registerOAuthRoutes(app: Express) {
         return;
       }
 
+      // Check if this is a new user (before upsert)
+      const existingUser = await db.getUserByOpenId(userInfo.openId);
+      const isNewUser = !existingUser;
+
       await db.upsertUser({
         openId: userInfo.openId,
         name: userInfo.name || null,
@@ -35,6 +40,14 @@ export function registerOAuthRoutes(app: Express) {
         loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
         lastSignedIn: new Date(),
       });
+
+      // Notify admin on new user registration
+      if (isNewUser) {
+        notifyOwner({
+          title: "🆕 New User Registered",
+          content: `**Name:** ${userInfo.name || "Unknown"}\n**Email:** ${userInfo.email || "N/A"}\n**Login method:** ${userInfo.loginMethod ?? userInfo.platform ?? "unknown"}\n**Time:** ${new Date().toISOString()}`,
+        }).catch(() => {}); // fire-and-forget, don't block login
+      }
 
       const sessionToken = await sdk.createSessionToken(userInfo.openId, {
         name: userInfo.name || "",

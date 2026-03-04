@@ -1,8 +1,9 @@
 import Stripe from "stripe";
 import { z } from "zod";
-import { assignUserPlan, getAllPlans, getUserByOpenId } from "./db";
+import { assignUserPlan, getAllPlans, getUserByOpenId, getAllUsers } from "./db";
 import { protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
+import { notifyOwner } from "./_core/notification";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -125,6 +126,15 @@ export async function handleStripeWebhook(req: import("express").Request, res: i
             stripeCustomerId: session.customer as string,
           });
           console.log(`[Stripe Webhook] Plan ${planId} assigned to user ${userId}`);
+          // Notify admin about new payment
+          const customerName = session.metadata?.customer_name || "Unknown";
+          const customerEmail = session.metadata?.customer_email || "N/A";
+          const planSlug = session.metadata?.plan_slug || "unknown";
+          const amount = session.amount_total ? `$${(session.amount_total / 100).toFixed(2)}` : "N/A";
+          notifyOwner({
+            title: `💰 New Payment — ${planSlug} plan`,
+            content: `**Customer:** ${customerName}\n**Email:** ${customerEmail}\n**Plan:** ${planSlug}\n**Amount:** ${amount}\n**Subscription ID:** ${session.subscription || "N/A"}\n**Time:** ${new Date().toISOString()}`,
+          }).catch(() => {});
         }
         break;
       }

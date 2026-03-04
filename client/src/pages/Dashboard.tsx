@@ -5,11 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   Bot, Code2, FileText, ImageIcon, Sparkles, LogOut,
-  BarChart3, MessageSquare, Crown, ArrowRight, Zap, History, Rocket,
+  BarChart3, MessageSquare, Crown, ArrowRight, Zap, History, Rocket, User, Menu,
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { useState } from "react";
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   chat: <MessageSquare className="h-5 w-5" />,
@@ -21,6 +23,12 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 export default function Dashboard() {
   const { user, logout } = useAuth({ redirectOnUnauthenticated: true });
   const [, navigate] = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleNav = (path: string) => {
+    setMobileOpen(false);
+    navigate(path);
+  };
 
   const { data: wrappers, isLoading: wrappersLoading } = trpc.wrappers.listForUser.useQuery();
   const { data: myPlan } = trpc.plans.myPlan.useQuery();
@@ -49,6 +57,9 @@ export default function Dashboard() {
           </Button>
           <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/dashboard/billing")}>
             <Crown className="h-4 w-4" /> Billing
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/profile")}>
+            <User className="h-4 w-4" /> Profile
           </Button>
           {isAdmin && (
             <>
@@ -84,14 +95,69 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Mobile header */}
-        <div className="md:hidden border-b p-4 flex items-center justify-between">
+        <div className="md:hidden border-b p-3 flex items-center justify-between bg-background/80 backdrop-blur sticky top-0 z-10">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
               <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
             </div>
             <span className="font-bold">WrapperHub</span>
           </div>
-          <Button variant="ghost" size="sm" onClick={logout}><LogOut className="h-4 w-4" /></Button>
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon"><Menu className="h-5 w-5" /></Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0">
+              <div className="flex flex-col h-full">
+                <div className="flex items-center gap-2 px-4 py-4 border-b">
+                  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                    <Sparkles className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                  <span className="font-bold text-lg">WrapperHub</span>
+                </div>
+                <nav className="flex-1 p-3 space-y-1">
+                  <Button variant="secondary" className="w-full justify-start gap-2" onClick={() => handleNav("/dashboard")}>
+                    <Zap className="h-4 w-4" /> Dashboard
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => handleNav("/dashboard/history")}>
+                    <History className="h-4 w-4" /> History
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => handleNav("/dashboard/billing")}>
+                    <Crown className="h-4 w-4" /> Billing
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => handleNav("/profile")}>
+                    <User className="h-4 w-4" /> Profile
+                  </Button>
+                  {isAdmin && (
+                    <>
+                      <div className="pt-4 pb-1 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Admin</div>
+                      <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => handleNav("/admin")}>
+                        <BarChart3 className="h-4 w-4" /> Admin Panel
+                      </Button>
+                      <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => handleNav("/admin/quick-deploy")}>
+                        <Rocket className="h-4 w-4" /> Quick Deploy
+                      </Button>
+                    </>
+                  )}
+                </nav>
+                <div className="border-t p-3">
+                  <div className="flex items-center gap-3 px-2 py-2 mb-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                        {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{user?.name ?? "User"}</p>
+                      <p className="text-xs text-muted-foreground">{myPlan?.plan?.name ?? "Free"} plan</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground" onClick={logout}>
+                    <LogOut className="h-4 w-4" /> Sign Out
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
 
         <div className="p-6 max-w-6xl mx-auto">

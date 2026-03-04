@@ -62,8 +62,8 @@
 - [x] Wykresy Recharts w panelu admina (przychód/użycie w czasie)
 - [x] Eksport CSV logów użycia (admin)
 - [x] Szybki wizard "Deploy Wrapper" w adminie
-- [ ] Strona profilu użytkownika
-- [ ] Powiadomienia admina (nowy użytkownik, nowa płatność)
-- [ ] Responsywność mobile (hamburger menu, mobile dashboard)
-- [ ] Strona 404 + error boundaries
+- [x] Strona profilu użytkownika
+- [x] Powiadomienia admina (nowy użytkownik, nowa płatność)
+- [x] Responsywność mobile (hamburger menu, mobile dashboard)
+- [x] Strona 404 + error boundaries
 - [x] Konwersacje: lista historii w sidebar chatu

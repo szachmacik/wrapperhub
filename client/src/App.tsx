@@ -12,6 +12,7 @@ import Billing from "./pages/Billing";
 import AdminPanel from "./pages/AdminPanel";
 import Onboarding from "./pages/Onboarding";
 import QuickDeploy from "./pages/QuickDeploy";
+import Profile from "./pages/Profile";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/admin" component={AdminPanel} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/admin/quick-deploy" component={QuickDeploy} />
+      <Route path="/profile" component={Profile} />
       <Route path="/billing" component={Billing} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
