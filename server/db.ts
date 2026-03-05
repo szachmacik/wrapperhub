@@ -9,13 +9,18 @@ import {
   InsertWrapper,
   InsertWrapperPlanAccess,
   apiKeys,
+  changelog,
   conversations,
   plans,
   usageLogs,
   userPlans,
+  userSettings,
   users,
+  wrapperFavorites,
   wrapperPlanAccess,
+  wrapperRatings,
   wrappers,
+  wrapperTags,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -383,4 +388,149 @@ export async function seedDefaultData() {
       }
     }
   }
+}
+
+// ─── Ratings ──────────────────────────────────────────────────────────────────
+export async function getRatingsForWrapper(wrapperId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: wrapperRatings.id,
+      userId: wrapperRatings.userId,
+      rating: wrapperRatings.rating,
+      review: wrapperRatings.review,
+      createdAt: wrapperRatings.createdAt,
+      userName: users.name,
+    })
+    .from(wrapperRatings)
+    .leftJoin(users, eq(users.id, wrapperRatings.userId))
+    .where(eq(wrapperRatings.wrapperId, wrapperId))
+    .orderBy(desc(wrapperRatings.createdAt))
+    .limit(50);
+}
+
+export async function upsertRating(userId: number, wrapperId: number, rating: number, review?: string) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db
+    .select({ id: wrapperRatings.id })
+    .from(wrapperRatings)
+    .where(and(eq(wrapperRatings.userId, userId), eq(wrapperRatings.wrapperId, wrapperId)))
+    .limit(1);
+  if (existing.length > 0) {
+    await db.update(wrapperRatings)
+      .set({ rating, review: review ?? null })
+      .where(and(eq(wrapperRatings.userId, userId), eq(wrapperRatings.wrapperId, wrapperId)));
+  } else {
+    await db.insert(wrapperRatings).values({ userId, wrapperId, rating, review: review ?? null });
+  }
+}
+
+export async function getAverageRating(wrapperId: number) {
+  const db = await getDb();
+  if (!db) return { avg: 0, count: 0 };
+  const rows = await db
+    .select({ rating: wrapperRatings.rating })
+    .from(wrapperRatings)
+    .where(eq(wrapperRatings.wrapperId, wrapperId));
+  if (rows.length === 0) return { avg: 0, count: 0 };
+  const avg = rows.reduce((sum, r) => sum + r.rating, 0) / rows.length;
+  return { avg: Math.round(avg * 10) / 10, count: rows.length };
+}
+
+// ─── Tags ─────────────────────────────────────────────────────────────────────
+export async function getTagsForWrapper(wrapperId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({ tag: wrapperTags.tag }).from(wrapperTags).where(eq(wrapperTags.wrapperId, wrapperId));
+  return rows.map((r) => r.tag);
+}
+
+export async function setTagsForWrapper(wrapperId: number, tags: string[]) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(wrapperTags).where(eq(wrapperTags.wrapperId, wrapperId));
+  if (tags.length > 0) {
+    await db.insert(wrapperTags).values(tags.map((tag) => ({ wrapperId, tag })));
+  }
+}
+
+// ─── Favorites ────────────────────────────────────────────────────────────────
+export async function getFavoritesForUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({ wrapperId: wrapperFavorites.wrapperId })
+    .from(wrapperFavorites)
+    .where(eq(wrapperFavorites.userId, userId));
+}
+
+export async function toggleFavorite(userId: number, wrapperId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const existing = await db
+    .select({ id: wrapperFavorites.id })
+    .from(wrapperFavorites)
+    .where(and(eq(wrapperFavorites.userId, userId), eq(wrapperFavorites.wrapperId, wrapperId)))
+    .limit(1);
+  if (existing.length > 0) {
+    await db.delete(wrapperFavorites).where(and(eq(wrapperFavorites.userId, userId), eq(wrapperFavorites.wrapperId, wrapperId)));
+    return false;
+  } else {
+    await db.insert(wrapperFavorites).values({ userId, wrapperId });
+    return true;
+  }
+}
+
+// ─── Changelog ────────────────────────────────────────────────────────────────
+export async function getChangelog(limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(changelog).orderBy(desc(changelog.publishedAt)).limit(limit);
+}
+
+export async function createChangelogEntry(entry: { version: string; title: string; content: string; type: "feature" | "fix" | "improvement" | "breaking" }) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(changelog).values(entry);
+}
+
+// ─── User Settings ────────────────────────────────────────────────────────────
+export async function getUserSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function upsertUserSettings(userId: number, settings: Partial<{ theme: "light" | "dark" | "system"; language: string; emailNotifications: boolean; marketingEmails: boolean; defaultWrapperId: number | null }>) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db.select({ id: userSettings.id }).from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
+  if (existing.length > 0) {
+    await db.update(userSettings).set(settings).where(eq(userSettings.userId, userId));
+  } else {
+    await db.insert(userSettings).values({ userId, ...settings });
+  }
+}
+
+// ─── Rate Limiting ────────────────────────────────────────────────────────────
+export async function getMonthlyUsageCount(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+  const rows = await db
+    .select({ id: usageLogs.id })
+    .from(usageLogs)
+    .where(
+      and(
+        eq(usageLogs.userId, userId),
+        gte(usageLogs.createdAt, startOfMonth),
+        eq(usageLogs.status, "success")
+      )
+    );
+  return rows.length;
 }

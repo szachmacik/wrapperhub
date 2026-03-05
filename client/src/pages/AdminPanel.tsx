@@ -42,6 +42,9 @@ export default function AdminPanel() {
             <h1 className="font-semibold">Admin Panel</h1>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={() => navigate("/admin/analytics")}>
+              <BarChart3 className="h-4 w-4 mr-2" /> Analytics
+            </Button>
             <Button size="sm" onClick={() => navigate("/admin/quick-deploy")}>
               <Rocket className="h-4 w-4 mr-2" /> Quick Deploy
             </Button>

@@ -6,6 +6,14 @@ import { wrapperRouter } from "./wrapperRouter";
 import { plansRouter } from "./plansRouter";
 import { stripeRouter } from "./stripeRouter";
 import { seedDefaultData } from "./db";
+import {
+  rateLimitRouter,
+  ratingsRouter,
+  favoritesRouter,
+  tagsRouter,
+  changelogRouter,
+  settingsRouter,
+} from "./featuresRouter";
 
 // Seed default data on startup
 seedDefaultData().catch(console.error);
@@ -23,6 +31,12 @@ export const appRouter = router({
   wrappers: wrapperRouter,
   plans: plansRouter,
   stripe: stripeRouter,
+  rateLimit: rateLimitRouter,
+  ratings: ratingsRouter,
+  favorites: favoritesRouter,
+  tags: tagsRouter,
+  changelog: changelogRouter,
+  settings: settingsRouter,
 });
 
 export type AppRouter = typeof appRouter;

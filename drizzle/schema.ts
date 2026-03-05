@@ -167,3 +167,69 @@ export const conversations = mysqlTable("conversations", {
 
 export type Conversation = typeof conversations.$inferSelect;
 export type InsertConversation = typeof conversations.$inferInsert;
+
+// ─── Wrapper Ratings (oceny narzędzi) ─────────────────────────────────────────
+export const wrapperRatings = mysqlTable("wrapper_ratings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  wrapperId: int("wrapperId").notNull().references(() => wrappers.id),
+  rating: int("rating").notNull(), // 1-5
+  review: text("review"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WrapperRating = typeof wrapperRatings.$inferSelect;
+export type InsertWrapperRating = typeof wrapperRatings.$inferInsert;
+
+// ─── Wrapper Tags (tagi dla narzędzi) ─────────────────────────────────────────
+export const wrapperTags = mysqlTable("wrapper_tags", {
+  id: int("id").autoincrement().primaryKey(),
+  wrapperId: int("wrapperId").notNull().references(() => wrappers.id),
+  tag: varchar("tag", { length: 64 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type WrapperTag = typeof wrapperTags.$inferSelect;
+export type InsertWrapperTag = typeof wrapperTags.$inferInsert;
+
+// ─── Changelog (historia zmian platformy) ─────────────────────────────────────
+export const changelog = mysqlTable("changelog", {
+  id: int("id").autoincrement().primaryKey(),
+  version: varchar("version", { length: 32 }).notNull(), // "1.0.0"
+  title: varchar("title", { length: 256 }).notNull(),
+  content: text("content").notNull(), // markdown
+  type: mysqlEnum("type", ["feature", "fix", "improvement", "breaking"]).default("feature").notNull(),
+  publishedAt: timestamp("publishedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Changelog = typeof changelog.$inferSelect;
+export type InsertChangelog = typeof changelog.$inferInsert;
+
+// ─── User Settings (ustawienia konta użytkownika) ─────────────────────────────
+export const userSettings = mysqlTable("user_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id).unique(),
+  theme: mysqlEnum("theme", ["light", "dark", "system"]).default("system").notNull(),
+  language: varchar("language", { length: 8 }).default("en").notNull(),
+  emailNotifications: boolean("emailNotifications").default(true).notNull(),
+  marketingEmails: boolean("marketingEmails").default(false).notNull(),
+  defaultWrapperId: int("defaultWrapperId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserSettings = typeof userSettings.$inferSelect;
+export type InsertUserSettings = typeof userSettings.$inferInsert;
+
+// ─── Wrapper Favorites (ulubione narzędzia) ────────────────────────────────────
+export const wrapperFavorites = mysqlTable("wrapper_favorites", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  wrapperId: int("wrapperId").notNull().references(() => wrappers.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type WrapperFavorite = typeof wrapperFavorites.$inferSelect;
+export type InsertWrapperFavorite = typeof wrapperFavorites.$inferInsert;

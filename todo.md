@@ -67,3 +67,23 @@
 - [x] Responsywność mobile (hamburger menu, mobile dashboard)
 - [x] Strona 404 + error boundaries
 - [x] Konwersacje: lista historii w sidebar chatu
+
+## Faza 10: Rozbudowa autonomiczna (bez zewnętrznych kluczy)
+- [ ] Rate limiting per plan (middleware + 429 response)
+- [ ] Marketplace narzędzi - publiczny katalog z wyszukiwarką i filtrami
+- [ ] System ocen wrapperów (ratings 1-5 + recenzje)
+- [ ] Dark mode toggle
+- [ ] Analytics dashboard - wykresy retencji, top narzędzia, revenue breakdown
+- [ ] Strona statusu systemu (/status)
+- [ ] Changelog (/changelog)
+- [ ] FAQ (/faq)
+- [ ] SEO meta tagi + Open Graph + sitemap.xml
+- [ ] Skeleton loadery dla wszystkich widoków
+- [ ] Empty states z ilustracjami
+- [ ] Eksport danych użytkownika (JSON/CSV)
+- [ ] Strona ustawień konta (/settings)
+- [ ] System tagów dla wrapperów
+- [ ] Wyszukiwarka globalna
+- [ ] Ulepszony onboarding (progress bar, tips)
+- [ ] Toast notifications dla akcji
+- [ ] Keyboard shortcuts (Cmd+K search)

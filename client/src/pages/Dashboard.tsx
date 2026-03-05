@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ToolGridSkeleton, EmptyState } from "@/components/LoadingSkeletons";
+import { Settings as SettingsIcon, Globe } from "lucide-react";
 import {
   Bot, Code2, FileText, ImageIcon, Sparkles, LogOut,
   BarChart3, MessageSquare, Crown, ArrowRight, Zap, History, Rocket, User, Menu,
@@ -60,6 +61,12 @@ export default function Dashboard() {
           </Button>
           <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/profile")}>
             <User className="h-4 w-4" /> Profile
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/settings")}>
+            <SettingsIcon className="h-4 w-4" /> Settings
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/marketplace")}>
+            <Globe className="h-4 w-4" /> Marketplace
           </Button>
           {isAdmin && (
             <>
@@ -191,9 +198,13 @@ export default function Dashboard() {
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">Your AI Tools</h2>
             {wrappersLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-40 rounded-xl" />)}
-              </div>
+              <ToolGridSkeleton count={4} />
+            ) : (wrappers ?? []).length === 0 ? (
+              <EmptyState
+                icon={<Bot size={48} />}
+                title="Brak dostępnych narzędzi"
+                description="Administrator nie dodał jeszcze żadnych narzędzi AI. Sprawdź ponownie później."
+              />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {(wrappers ?? []).map((wrapper) => (

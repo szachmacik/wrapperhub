@@ -1,0 +1,19 @@
+{
+  "name": "WrapperHub — Platforma narzędzi AI",
+  "short_name": "WrapperHub",
+  "description": "Korzystaj z najlepszych narzędzi AI bez konfiguracji",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["productivity", "utilities", "business"],
+  "lang": "pl"
+}
