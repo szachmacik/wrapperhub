@@ -19,6 +19,11 @@ import ChangelogPage from "./pages/ChangelogPage";
 import FAQ from "./pages/FAQ";
 import StatusPage from "./pages/StatusPage";
 import Settings from "./pages/Settings";
+import ConversationHistory from "./pages/ConversationHistory";
+import ToolDetail from "./pages/ToolDetail";
+import Favorites from "./pages/Favorites";
+import UsageDashboard from "./pages/UsageDashboard";
+import PricingComparison from "./pages/PricingComparison";
 
 function Router() {
   return (
@@ -37,6 +42,17 @@ function Router() {
       <Route path="/dashboard/billing" component={Billing} />
       <Route path="/dashboard/profile" component={Profile} />
       <Route path="/dashboard/settings" component={Settings} />
+
+      {/* Tool detail (public) */}
+      <Route path="/tools/:slug" component={ToolDetail} />
+
+      {/* Conversation history */}
+      <Route path="/dashboard/conversations" component={ConversationHistory} />
+      <Route path="/dashboard/favorites" component={Favorites} />
+      <Route path="/dashboard/usage" component={UsageDashboard} />
+
+      {/* Pricing */}
+      <Route path="/pricing" component={PricingComparison} />
 
       {/* Shortcuts */}
       <Route path="/billing" component={Billing} />

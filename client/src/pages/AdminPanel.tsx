@@ -376,21 +376,76 @@ function UsersTab() {
   const { data: plans } = trpc.plans.list.useQuery();
   const assignPlanMutation = trpc.plans.admin.assignPlan.useMutation({ onSuccess: () => { utils.plans.admin.listUsers.invalidate(); toast.success("Plan assigned!"); } });
   const updateRoleMutation = trpc.plans.admin.updateUserRole.useMutation({ onSuccess: () => { utils.plans.admin.listUsers.invalidate(); toast.success("Role updated!"); } });
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+
+  const filtered = useMemo(() => {
+    return (users ?? []).filter((u) => {
+      const matchSearch = !search ||
+        (u.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        (u.email ?? "").toLowerCase().includes(search.toLowerCase());
+      const matchRole = roleFilter === "all" || u.role === roleFilter;
+      return matchSearch && matchRole;
+    });
+  }, [users, search, roleFilter]);
+
+  const exportCSV = () => {
+    const header = "ID,Name,Email,Role,Created\n";
+    const rows = filtered.map((u) =>
+      `${u.id},"${u.name ?? ""}","${u.email ?? ""}",${u.role},${new Date(u.createdAt).toISOString()}`
+    ).join("\n");
+    const blob = new Blob([header + rows], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `wrapperhub-users-${Date.now()}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Users exported!");
+  };
+
+  const adminCount = (users ?? []).filter(u => u.role === "admin").length;
+  const userCount = (users ?? []).filter(u => u.role === "user").length;
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Users ({users?.length ?? 0})</h2>
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Users ({users?.length ?? 0})</h2>
+          <p className="text-xs text-muted-foreground">{adminCount} admins · {userCount} users</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={exportCSV}>
+          <Download className="h-4 w-4 mr-2" /> Export CSV
+        </Button>
+      </div>
+
+      <div className="flex gap-2">
+        <Input
+          placeholder="Search name or email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-8 text-sm max-w-xs"
+        />
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="h-8 text-xs w-28"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="user">Users</SelectItem>
+            <SelectItem value="admin">Admins</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <div className="divide-y">
-            {(users ?? []).map((user) => (
-              <div key={user.id} className="flex items-center gap-4 p-4">
+            {filtered.map((user) => (
+              <div key={user.id} className="flex items-center gap-4 p-4 hover:bg-muted/20 transition-colors">
                 <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold flex-shrink-0">
                   {user.name?.charAt(0)?.toUpperCase() ?? "U"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{user.name ?? "Unknown"}</p>
                   <p className="text-xs text-muted-foreground">{user.email ?? user.openId}</p>
+                  <p className="text-xs text-muted-foreground">Joined {new Date(user.createdAt).toLocaleDateString()}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={user.role === "admin" ? "default" : "secondary"} className="text-xs">{user.role}</Badge>
@@ -413,8 +468,8 @@ function UsersTab() {
                 </div>
               </div>
             ))}
-            {(!users || users.length === 0) && (
-              <div className="text-center py-12 text-muted-foreground text-sm">No users yet.</div>
+            {filtered.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground text-sm">No users matching filters.</div>
             )}
           </div>
         </CardContent>
@@ -494,11 +549,100 @@ function ApiKeysTab() {
 
 // ─── Logs Tab ─────────────────────────────────────────────────────────────────
 function LogsTab() {
-  const { data: logs } = trpc.plans.admin.usageLogs.useQuery({ limit: 100 });
+  const { data: logs } = trpc.plans.admin.usageLogs.useQuery({ limit: 500 });
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 20;
+
+  const filtered = useMemo(() => {
+    return (logs ?? []).filter(({ log, wrapper, user }) => {
+      const matchSearch = !search ||
+        (user.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        (user.email ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        wrapper.name.toLowerCase().includes(search.toLowerCase());
+      const matchStatus = statusFilter === "all" || log.status === statusFilter;
+      const matchType = typeFilter === "all" || log.requestType === typeFilter;
+      return matchSearch && matchStatus && matchType;
+    });
+  }, [logs, search, statusFilter, typeFilter]);
+
+  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+
+  const totalMargin = filtered.reduce((s, { log }) => s + parseFloat(log.marginUsd), 0);
+  const totalCost = filtered.reduce((s, { log }) => s + parseFloat(log.baseCostUsd), 0);
+  const totalTokens = filtered.reduce((s, { log }) => s + log.inputTokens + log.outputTokens, 0);
+
+  const exportCSV = () => {
+    const header = "ID,User,Wrapper,Type,Tokens,Cost,Margin,Status,Time\n";
+    const rows = filtered.map(({ log, wrapper, user }) =>
+      `${log.id},"${user.name ?? user.email ?? ""}","${wrapper.name}",${log.requestType},${log.inputTokens + log.outputTokens},${log.baseCostUsd},${log.marginUsd},${log.status},${new Date(log.createdAt).toISOString()}`
+    ).join("\n");
+    const blob = new Blob([header + rows], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `wrapperhub-logs-${Date.now()}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Logs exported!");
+  };
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Usage Logs (last 100)</h2>
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Usage Logs</h2>
+          <p className="text-xs text-muted-foreground">{filtered.length} entries · ${totalMargin.toFixed(4)} margin · {totalTokens.toLocaleString()} tokens</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={exportCSV}>
+          <Download className="h-4 w-4 mr-2" /> Export CSV
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Input
+          placeholder="Search user or wrapper..."
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+          className="h-8 text-sm max-w-xs"
+        />
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(0); }}>
+          <SelectTrigger className="h-8 text-xs w-32"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="success">Success</SelectItem>
+            <SelectItem value="error">Error</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setPage(0); }}>
+          <SelectTrigger className="h-8 text-xs w-32"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="chat">Chat</SelectItem>
+            <SelectItem value="image">Image</SelectItem>
+            <SelectItem value="document">Document</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="p-3">
+          <p className="text-xs text-muted-foreground">Total Margin</p>
+          <p className="text-xl font-bold text-green-600">${totalMargin.toFixed(4)}</p>
+        </Card>
+        <Card className="p-3">
+          <p className="text-xs text-muted-foreground">Base Cost</p>
+          <p className="text-xl font-bold">${totalCost.toFixed(4)}</p>
+        </Card>
+        <Card className="p-3">
+          <p className="text-xs text-muted-foreground">Total Tokens</p>
+          <p className="text-xl font-bold">{(totalTokens / 1000).toFixed(1)}k</p>
+        </Card>
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -516,7 +660,7 @@ function LogsTab() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {(logs ?? []).map(({ log, wrapper, user }) => (
+                {paginated.map(({ log, wrapper, user }) => (
                   <tr key={log.id} className="hover:bg-muted/20">
                     <td className="p-3 text-xs">{user.name ?? user.email ?? "—"}</td>
                     <td className="p-3 text-xs font-medium">{wrapper.name}</td>
@@ -528,12 +672,22 @@ function LogsTab() {
                     <td className="p-3 text-xs text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</td>
                   </tr>
                 ))}
-                {(!logs || logs.length === 0) && (
-                  <tr><td colSpan={8} className="text-center py-12 text-muted-foreground text-sm">No logs yet.</td></tr>
+                {paginated.length === 0 && (
+                  <tr><td colSpan={8} className="text-center py-12 text-muted-foreground text-sm">No logs matching filters.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t">
+              <p className="text-xs text-muted-foreground">Page {page + 1} of {totalPages} ({filtered.length} results)</p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Previous</Button>
+                <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next</Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

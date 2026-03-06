@@ -103,12 +103,16 @@ function WrapperCard({ wrapper, isFavorited, onToggleFavorite }: {
           ))}
         </div>
 
-        <Link href={`/dashboard/tool/${wrapper.id}`}>
-          <Button size="sm" className="w-full mt-2 group/btn">
-            Użyj narzędzia
-            <ArrowRight size={14} className="ml-1 group-hover/btn:translate-x-1 transition-transform" />
-          </Button>
-        </Link>
+        <div className="flex gap-2 mt-2">
+          <Link href={`/tools/${wrapper.id}`} className="flex-1">
+            <Button size="sm" variant="outline" className="w-full text-xs">Szczegóły</Button>
+          </Link>
+          <Link href={`/dashboard/tool/${wrapper.id}`} className="flex-1">
+            <Button size="sm" className="w-full group/btn text-xs">
+              Użyj <ArrowRight size={12} className="ml-1 group-hover/btn:translate-x-0.5 transition-transform" />
+            </Button>
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );
@@ -118,7 +122,8 @@ export default function Marketplace() {
   const { isAuthenticated } = useAuth();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"name" | "featured" | "newest">("featured");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"name" | "featured" | "newest" | "rating">("featured");
 
   const { data: wrappersData, isLoading } = trpc.wrappers.list.useQuery();
   const { data: favoriteIds = [] } = trpc.favorites.list.useQuery(undefined, { enabled: isAuthenticated });
@@ -152,8 +157,9 @@ export default function Marketplace() {
     });
     if (sortBy === "featured") result = [...result].sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
     else if (sortBy === "name") result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+    else if (sortBy === "newest") result = [...result].reverse();
     return result;
-  }, [wrappers, search, selectedCategory, sortBy]);
+  }, [wrappers, search, selectedCategory, selectedTag, sortBy]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -218,6 +224,7 @@ export default function Marketplace() {
               <option value="featured">Polecane</option>
               <option value="name">Nazwa A-Z</option>
               <option value="newest">Najnowsze</option>
+              <option value="rating">Najwyżej oceniane</option>
             </select>
           </div>
         </div>

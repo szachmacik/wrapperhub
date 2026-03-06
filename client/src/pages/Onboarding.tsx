@@ -35,6 +35,12 @@ const TOOLS = [
   { icon: <FileText className="h-5 w-5" />, name: "Document Analyzer", desc: "Extract insights from documents", color: "#059669" },
 ];
 
+const TIPS = [
+  "Tip: You can use keyboard shortcut Cmd+K to quickly search for tools.",
+  "Tip: Each tool has a conversation history — you can resume any chat anytime.",
+  "Tip: Upgrade to Pro for 1000 requests/month and priority support.",
+];
+
 export default function Onboarding() {
   const { user } = useAuth({ redirectOnUnauthenticated: true });
   const [, navigate] = useLocation();
@@ -46,17 +52,32 @@ export default function Onboarding() {
     navigate("/dashboard");
   };
 
+  const progressPercent = Math.round(((step + 1) / STEPS.length) * 100);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
-        {/* Progress dots */}
-        <div className="flex justify-center gap-2 mb-8">
-          {STEPS.map((s, i) => (
+        {/* Progress bar */}
+        <div className="mb-8">
+          <div className="flex justify-between text-xs text-muted-foreground mb-2">
+            <span>Step {step + 1} of {STEPS.length}</span>
+            <span>{progressPercent}% complete</span>
+          </div>
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
-              key={s.id}
-              className={`h-2 rounded-full transition-all duration-300 ${i === step ? "w-8 bg-primary" : i < step ? "w-2 bg-primary/60" : "w-2 bg-muted"}`}
+              className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progressPercent}%` }}
             />
-          ))}
+          </div>
+          {/* Progress dots */}
+          <div className="flex justify-center gap-2 mt-3">
+            {STEPS.map((s, i) => (
+              <div
+                key={s.id}
+                className={`h-2 rounded-full transition-all duration-300 ${i === step ? "w-8 bg-primary" : i < step ? "w-2 bg-primary/60" : "w-2 bg-muted"}`}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Step 0: Welcome */}
@@ -161,6 +182,12 @@ export default function Onboarding() {
             </CardContent>
           </Card>
         )}
+
+        {/* Tip box */}
+        <div className="mt-4 p-3 rounded-xl bg-primary/5 border border-primary/10 flex items-start gap-2">
+          <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+          <p className="text-xs text-muted-foreground">{TIPS[step]}</p>
+        </div>
 
         {/* Skip link */}
         {step < 2 && (

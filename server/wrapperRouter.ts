@@ -15,8 +15,23 @@ import {
   getConversationById,
   upsertConversation,
   deleteConversation,
+  getMonthlyUsageCount,
 } from "./db";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+
+// ─── Rate limit helper ────────────────────────────────────────────────────────
+async function checkRateLimit(userId: number): Promise<void> {
+  const userPlan = await getUserActivePlan(userId);
+  const limit = userPlan?.plan?.monthlyRequestLimit ?? 50; // Free plan default
+  if (limit === null) return; // Unlimited (Business)
+  const used = await getMonthlyUsageCount(userId);
+  if (used >= limit) {
+    throw new TRPCError({
+      code: "TOO_MANY_REQUESTS",
+      message: `Monthly request limit reached (${used}/${limit}). Please upgrade your plan.`,
+    });
+  }
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 async function getApiKeyForProvider(provider: string): Promise<string> {
@@ -42,6 +57,10 @@ export const wrapperRouter = router({
   list: publicProcedure.query(async () => {
     return getActiveWrappers();
   }),
+  // Public: get wrapper by slug
+  getBySlug: publicProcedure.input(z.object({ slug: z.string() })).query(async ({ input }) => {
+    return getWrapperBySlug(input.slug);
+  }),
 
   // Authenticated: list wrappers available for user's plan
   listForUser: protectedProcedure.query(async ({ ctx }) => {
@@ -63,12 +82,12 @@ export const wrapperRouter = router({
       conversationId: z.number().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+       await checkRateLimit(ctx.user.id);
       const wrapper = await getWrapperBySlug(input.wrapperSlug);
       if (!wrapper || !wrapper.isActive) throw new TRPCError({ code: "NOT_FOUND", message: "Wrapper not found" });
       if (wrapper.category !== "chat" && wrapper.category !== "code") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "This wrapper does not support chat" });
       }
-
       const apiKey = await getApiKeyForProvider(wrapper.provider);
       const startTime = Date.now();
 
@@ -152,6 +171,7 @@ export const wrapperRouter = router({
       quality: z.enum(["standard", "hd"]).default("standard"),
     }))
     .mutation(async ({ ctx, input }) => {
+      await checkRateLimit(ctx.user.id);
       const wrapper = await getWrapperBySlug(input.wrapperSlug);
       if (!wrapper || !wrapper.isActive) throw new TRPCError({ code: "NOT_FOUND", message: "Wrapper not found" });
       if (wrapper.category !== "image") throw new TRPCError({ code: "BAD_REQUEST", message: "This wrapper does not support image generation" });
@@ -215,6 +235,7 @@ export const wrapperRouter = router({
       question: z.string().min(1).max(500),
     }))
     .mutation(async ({ ctx, input }) => {
+      await checkRateLimit(ctx.user.id);
       const wrapper = await getWrapperBySlug(input.wrapperSlug);
       if (!wrapper || !wrapper.isActive) throw new TRPCError({ code: "NOT_FOUND", message: "Wrapper not found" });
       if (wrapper.category !== "document") throw new TRPCError({ code: "BAD_REQUEST", message: "This wrapper does not support document analysis" });

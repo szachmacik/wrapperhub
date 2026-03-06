@@ -70,20 +70,48 @@
 
 ## Faza 10: Rozbudowa autonomiczna (bez zewnętrznych kluczy)
 - [ ] Rate limiting per plan (middleware + 429 response)
-- [ ] Marketplace narzędzi - publiczny katalog z wyszukiwarką i filtrami
-- [ ] System ocen wrapperów (ratings 1-5 + recenzje)
-- [ ] Dark mode toggle
-- [ ] Analytics dashboard - wykresy retencji, top narzędzia, revenue breakdown
-- [ ] Strona statusu systemu (/status)
-- [ ] Changelog (/changelog)
-- [ ] FAQ (/faq)
-- [ ] SEO meta tagi + Open Graph + sitemap.xml
-- [ ] Skeleton loadery dla wszystkich widoków
-- [ ] Empty states z ilustracjami
-- [ ] Eksport danych użytkownika (JSON/CSV)
-- [ ] Strona ustawień konta (/settings)
-- [ ] System tagów dla wrapperów
-- [ ] Wyszukiwarka globalna
-- [ ] Ulepszony onboarding (progress bar, tips)
+- [x] Marketplace narzędzi - publiczny katalog z wyszukiwarką i filtrami
+- [x] System ocen wrapperów (ratings 1-5 + recenzje)
+- [x] Dark mode toggle
+- [x] Analytics dashboard - wykresy retencji, top narzędzia, revenue breakdown
+- [x] Strona statusu systemu (/status)
+- [x] Changelog (/changelog)
+- [x] FAQ (/faq)
+- [x] SEO meta tagi + Open Graph + sitemap.xml
+- [x] Skeleton loadery dla wszystkich widoków
+- [x] Empty states z ilustracjami
+- [x] Eksport danych użytkownika (JSON/CSV)
+- [x] Strona ustawień konta (/settings)
+- [x] System tagów dla wrapperów
+- [x] Wyszukiwarka globalna
+- [x] Ulepszony onboarding (progress bar, tips)
 - [ ] Toast notifications dla akcji
-- [ ] Keyboard shortcuts (Cmd+K search)
+- [x] Keyboard shortcuts (Cmd+K search)
+
+## Faza 11: Rozbudowa autonomiczna (iteracja 5)
+- [x] Historia konwersacji per narzędzie (ConversationHistory.tsx)
+- [x] Publiczna strona wrappera /tools/:slug (ToolDetail.tsx)
+- [x] Filtry tagów w Marketplace z sortowaniem po ratingu
+- [x] Globalna wyszukiwarka cmd+k (CommandPalette.tsx)
+- [x] Strona porównania planów z kalkulatorem ROI (PricingComparison.tsx)
+- [x] Widget aktywności użytkownika (RecentActivity.tsx)
+- [x] Widget statystyk użytkownika (UserStatsWidget)
+- [x] Powiadomienia in-app (NotificationBell.tsx)
+- [x] Ulepszony LogsTab: filtry, paginacja, eksport CSV, summary cards
+- [x] Rate limiting per plan (middleware 429)
+- [x] Strona publiczna /tools z katalogiem
+- [x] Ulepszony onboarding (progress bar, tips)
+- [x] Bulk actions w UsersTab (wyszukiwanie, filtry, eksport CSV)
+- [x] Strona /dashboard/conversations (historia konwersacji)
+
+## Faza 12: Rozbudowa autonomiczna (iteracja 6)
+- [x] Strona ToolDetail /tools/:slug z opisem i ocenami
+- [x] Ulepszony CommandPalette - narzędzia + nawigacja + admin shortcuts
+- [x] Strona historii konwersacji /dashboard/conversations
+- [x] Strona porównania planów /pricing
+- [ ] Widget "Trending Tools" na landing page
+- [ ] Micro-animacje framer-motion w Dashboard
+- [x] Strona "Ulubione narzędzia" /dashboard/favorites
+- [x] Wskaźnik użycia planu (progress bar) w Dashboard
+- [ ] Ulepszony AdminPanel - bulk delete wrapperów
+- [x] Strona /dashboard/usage z wykresami użycia per narzędzie

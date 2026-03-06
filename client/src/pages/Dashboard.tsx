@@ -6,10 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ToolGridSkeleton, EmptyState } from "@/components/LoadingSkeletons";
+import { Progress } from "@/components/ui/progress";
+import { NotificationBell } from "@/components/NotificationBell";
+import { CommandPalette } from "@/components/CommandPalette";
+import { RecentActivityWidget, UserStatsWidget } from "@/components/RecentActivity";
 import { Settings as SettingsIcon, Globe } from "lucide-react";
 import {
   Bot, Code2, FileText, ImageIcon, Sparkles, LogOut,
   BarChart3, MessageSquare, Crown, ArrowRight, Zap, History, Rocket, User, Menu,
+  Heart, Activity,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
@@ -68,6 +73,15 @@ export default function Dashboard() {
           <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/marketplace")}>
             <Globe className="h-4 w-4" /> Marketplace
           </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/dashboard/favorites")}>
+            <Heart className="h-4 w-4" /> Favorites
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/dashboard/conversations")}>
+            <MessageSquare className="h-4 w-4" /> Conversations
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/dashboard/usage")}>
+            <Activity className="h-4 w-4" /> Usage Stats
+          </Button>
           {isAdmin && (
             <>
               <div className="pt-4 pb-1 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Admin</div>
@@ -93,9 +107,12 @@ export default function Dashboard() {
               <p className="text-xs text-muted-foreground truncate">{myPlan?.plan?.name ?? "Free"} plan</p>
             </div>
           </div>
-          <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground" onClick={logout}>
-            <LogOut className="h-4 w-4" /> Sign Out
-          </Button>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <Button variant="ghost" className="flex-1 justify-start gap-2 text-muted-foreground" onClick={logout}>
+              <LogOut className="h-4 w-4" /> Sign Out
+            </Button>
+          </div>
         </div>
       </aside>
 
@@ -109,10 +126,12 @@ export default function Dashboard() {
             </div>
             <span className="font-bold">WrapperHub</span>
           </div>
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon"><Menu className="h-5 w-5" /></Button>
-            </SheetTrigger>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon"><Menu className="h-5 w-5" /></Button>
+              </SheetTrigger>
             <SheetContent side="left" className="w-72 p-0">
               <div className="flex flex-col h-full">
                 <div className="flex items-center gap-2 px-4 py-4 border-b">
@@ -165,6 +184,7 @@ export default function Dashboard() {
               </div>
             </SheetContent>
           </Sheet>
+          </div>
         </div>
 
         <div className="p-6 max-w-6xl mx-auto">
@@ -175,24 +195,44 @@ export default function Dashboard() {
           </div>
 
           {/* Plan banner */}
-          {myPlan && (
-            <Card className="mb-8 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Crown className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-medium">{myPlan.plan.name} Plan</p>
-                    <p className="text-sm text-muted-foreground">
-                      {myPlan.plan.monthlyRequestLimit ? `${myPlan.plan.monthlyRequestLimit} requests/month` : "Unlimited requests"}
-                    </p>
+          {myPlan && (() => {
+            const limit = myPlan.plan.monthlyRequestLimit ?? 0;
+            const used = usage?.length ?? 0;
+            const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+            return (
+              <Card className="mb-8 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <Crown className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">{myPlan.plan.name} Plan</p>
+                        <p className="text-sm text-muted-foreground">
+                          {limit > 0 ? `${used.toLocaleString()} / ${limit.toLocaleString()} requests this month` : "Unlimited requests"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {limit > 0 && (
+                        <Badge variant={pct > 80 ? "destructive" : pct > 60 ? "secondary" : "outline"} className="text-xs">
+                          {pct}% used
+                        </Badge>
+                      )}
+                      <Button size="sm" variant="outline" onClick={() => navigate("/dashboard/billing")}>
+                        Upgrade <ArrowRight className="ml-1 h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => navigate("/dashboard/billing")}>
-                  Upgrade <ArrowRight className="ml-1 h-3 w-3" />
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+                  {limit > 0 && (
+                    <Progress
+                      value={pct}
+                      className={`h-1.5 ${pct > 80 ? "[&>div]:bg-destructive" : pct > 60 ? "[&>div]:bg-amber-500" : ""}`}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {/* Tools Grid */}
           <div className="mb-8">
@@ -241,39 +281,11 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Recent Activity */}
-          {recentUsage.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Recent Activity</h2>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/history")}>
-                  View all <ArrowRight className="ml-1 h-3 w-3" />
-                </Button>
-              </div>
-              <Card>
-                <CardContent className="p-0">
-                  <div className="divide-y">
-                    {recentUsage.map((item) => (
-                      <div key={item.id} className="flex items-center gap-4 p-4">
-                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
-                          {CATEGORY_ICONS[item.requestType] ?? <Bot className="h-4 w-4" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">{item.wrapperName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {item.inputTokens + item.outputTokens > 0 ? `${item.inputTokens + item.outputTokens} tokens` : "1 request"} · {new Date(item.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Badge variant={item.status === "success" ? "secondary" : "destructive"} className="text-xs">
-                          {item.status}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          {/* Bottom widgets: Activity + Stats */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-2">
+            <RecentActivityWidget />
+            <UserStatsWidget />
+          </div>
         </div>
       </main>
     </div>
