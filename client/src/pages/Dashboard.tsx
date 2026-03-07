@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
+import { motion } from "framer-motion";
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   chat: <MessageSquare className="h-5 w-5" />,
@@ -246,11 +247,20 @@ export default function Dashboard() {
                 description="Administrator nie dodał jeszcze żadnych narzędzi AI. Sprawdź ponownie później."
               />
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <motion.div
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+                initial="hidden"
+                animate="visible"
+                variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
+              >
                 {(wrappers ?? []).map((wrapper) => (
-                  <Card
+                  <motion.div
                     key={wrapper.id}
-                    className="group cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 border-border/60"
+                    variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                    transition={{ duration: 0.35 }}
+                  >
+                  <Card
+                    className="group cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 border-border/60 h-full"
                     onClick={() => navigate(`/dashboard/tool/${wrapper.slug}`)}
                   >
                     <CardHeader className="pb-3">
@@ -270,6 +280,7 @@ export default function Dashboard() {
                       </div>
                     </CardContent>
                   </Card>
+                  </motion.div>
                 ))}
                 {(!wrappers || wrappers.length === 0) && (
                   <div className="col-span-4 text-center py-12 text-muted-foreground">
@@ -277,7 +288,7 @@ export default function Dashboard() {
                     <p>No tools available yet. Check back soon!</p>
                   </div>
                 )}
-              </div>
+              </motion.div>
             )}
           </div>
 

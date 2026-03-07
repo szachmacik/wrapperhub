@@ -13,7 +13,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft, BarChart3, Bot, Code2, FileText, ImageIcon, Key, Plus,
   Settings, Trash2, Users, Zap, TrendingUp, DollarSign, Activity, Edit, Download, Rocket,
+  CheckSquare,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useLocation } from "wouter";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -257,6 +259,37 @@ function WrappersTab() {
 
   const [editWrapper, setEditWrapper] = useState<typeof wrappers extends (infer T)[] | undefined ? T | null : null>(null);
   const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [searchWrappers, setSearchWrappers] = useState("");
+
+  const filteredWrappers = useMemo(() =>
+    (wrappers ?? []).filter((w) =>
+      w.name.toLowerCase().includes(searchWrappers.toLowerCase()) ||
+      w.category.toLowerCase().includes(searchWrappers.toLowerCase())
+    ), [wrappers, searchWrappers]);
+
+  const toggleSelect = (id: number) => setSelected((prev) => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  const toggleAll = () => {
+    if (selected.size === filteredWrappers.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(filteredWrappers.map((w) => w.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Delete ${selected.size} wrapper(s)? This cannot be undone.`)) return;
+    for (const id of Array.from(selected)) {
+      await deleteMutation.mutateAsync({ id });
+    }
+    setSelected(new Set());
+    toast.success(`Deleted ${selected.size} wrapper(s).`);
+  };
 
   const ICONS: Record<string, React.ReactNode> = { chat: <Bot className="h-4 w-4" />, image: <ImageIcon className="h-4 w-4" />, document: <FileText className="h-4 w-4" />, code: <Code2 className="h-4 w-4" /> };
 
@@ -285,8 +318,24 @@ function WrappersTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">AI Wrappers</h2>
+      <div className="flex flex-wrap gap-3 items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold">AI Wrappers</h2>
+          <Badge variant="outline">{(wrappers ?? []).length} total</Badge>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search wrappers..."
+            value={searchWrappers}
+            onChange={(e) => setSearchWrappers(e.target.value)}
+            className="w-44 h-8 text-sm"
+          />
+          {selected.size > 0 && (
+            <Button size="sm" variant="destructive" onClick={handleBulkDelete} disabled={deleteMutation.isPending}>
+              <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete {selected.size}
+            </Button>
+          )}
+        </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="sm" onClick={() => setEditWrapper(null)}>
@@ -325,7 +374,31 @@ function WrappersTab() {
               <div className="grid grid-cols-3 gap-3">
                 <div><Label>Cost/Request ($)</Label><Input name="costPerRequest" defaultValue={editWrapper?.costPerRequest ?? "0"} /></div>
                 <div><Label>Cost/1k Tokens ($)</Label><Input name="costPer1kTokens" defaultValue={editWrapper?.costPer1kTokens ?? "0"} /></div>
-                <div><Label>Margin Multiplier</Label><Input name="marginMultiplier" defaultValue={editWrapper?.marginMultiplier ?? "2.0"} /></div>
+                <div>
+                <Label>Margin Multiplier</Label>
+                <Input
+                  name="marginMultiplier"
+                  type="number"
+                  step="0.1"
+                  min="1"
+                  defaultValue={editWrapper?.marginMultiplier ?? "2.0"}
+                  onChange={(e) => {
+                    const el = e.currentTarget.closest('form');
+                    if (!el) return;
+                    const cost = parseFloat((el.querySelector('[name=costPerRequest]') as HTMLInputElement)?.value || '0');
+                    const mult = parseFloat(e.currentTarget.value || '1');
+                    const preview = el.querySelector('#margin-preview');
+                    if (preview) {
+                      const sell = cost * mult;
+                      const profit = sell - cost;
+                      preview.textContent = `Sell: $${sell.toFixed(4)} / Profit: $${profit.toFixed(4)} (${((profit/sell)*100).toFixed(0)}%)`;
+                    }
+                  }}
+                />
+                <p id="margin-preview" className="text-xs text-muted-foreground mt-1">
+                  Set cost per request to preview margin.
+                </p>
+              </div>
               </div>
               <div className="flex gap-6">
                 <div className="flex items-center gap-2"><Switch name="isActive" defaultChecked={editWrapper?.isActive ?? true} /><Label>Active</Label></div>
@@ -337,10 +410,25 @@ function WrappersTab() {
         </Dialog>
       </div>
 
+      {filteredWrappers.length > 0 && (
+        <div className="flex items-center gap-2 px-2 py-1.5 bg-muted/40 rounded-lg">
+          <Checkbox
+            checked={selected.size === filteredWrappers.length && filteredWrappers.length > 0}
+            onCheckedChange={toggleAll}
+          />
+          <span className="text-xs text-muted-foreground">
+            {selected.size > 0 ? `${selected.size} of ${filteredWrappers.length} selected` : `Select all (${filteredWrappers.length})`}
+          </span>
+        </div>
+      )}
       <div className="grid gap-3">
-        {(wrappers ?? []).map((w) => (
-          <Card key={w.id} className={`${!w.isActive ? "opacity-60" : ""}`}>
+        {filteredWrappers.map((w) => (
+          <Card key={w.id} className={`${!w.isActive ? "opacity-60" : ""} ${selected.has(w.id) ? "ring-2 ring-primary" : ""} transition-all`}>
             <CardContent className="p-4 flex items-center gap-4">
+              <Checkbox
+                checked={selected.has(w.id)}
+                onCheckedChange={() => toggleSelect(w.id)}
+              />
               <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${w.color}20`, color: w.color ?? undefined }}>
                 {ICONS[w.category] ?? <Bot className="h-4 w-4" />}
               </div>

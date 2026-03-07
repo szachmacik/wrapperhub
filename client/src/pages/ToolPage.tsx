@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft, Bot, Send, ImageIcon, FileText, Code2, Loader2,
   Download, Upload, Sparkles, MessageSquare, RefreshCw, History, X,
+  Copy, Share2, ExternalLink,
 } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -239,17 +240,43 @@ export default function ToolPage() {
             </div>
           ) : <Skeleton className="h-8 w-48" />}
 
-          {(wrapper?.category === "chat" || wrapper?.category === "code") && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowHistory(!showHistory)}
-              className="shrink-0 hidden sm:flex"
-            >
-              <History className="h-4 w-4 mr-1" />
-              History
-            </Button>
-          )}
+          <div className="flex items-center gap-1 ml-auto shrink-0">
+            {(wrapper?.category === "chat" || wrapper?.category === "code") && messages.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden sm:flex"
+                onClick={() => {
+                  const text = messages.map((m) => `${m.role === "user" ? "You" : "AI"}: ${m.content}`).join("\n\n");
+                  navigator.clipboard.writeText(text);
+                  toast.success("Conversation copied!");
+                }}
+              >
+                <Copy className="h-4 w-4 mr-1" /> Copy
+              </Button>
+            )}
+            {(wrapper?.category === "chat" || wrapper?.category === "code") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden sm:flex"
+                onClick={() => navigate(`/dashboard/tool/${slug}/history`)}
+              >
+                <History className="h-4 w-4 mr-1" />
+                History
+              </Button>
+            )}
+            {wrapper && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden sm:flex"
+                onClick={() => navigate(`/tools/${slug}`)}
+              >
+                <ExternalLink className="h-4 w-4 mr-1" /> Info
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 

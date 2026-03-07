@@ -24,6 +24,9 @@ import ToolDetail from "./pages/ToolDetail";
 import Favorites from "./pages/Favorites";
 import UsageDashboard from "./pages/UsageDashboard";
 import PricingComparison from "./pages/PricingComparison";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import ToolHistory from "./pages/ToolHistory";
 
 function Router() {
   return (
@@ -53,6 +56,13 @@ function Router() {
 
       {/* Pricing */}
       <Route path="/pricing" component={PricingComparison} />
+
+      {/* About & Contact */}
+      <Route path="/about" component={About} />
+      <Route path="/contact" component={Contact} />
+
+      {/* Tool history per tool */}
+      <Route path="/dashboard/tool/:slug/history" component={ToolHistory} />
 
       {/* Shortcuts */}
       <Route path="/billing" component={Billing} />

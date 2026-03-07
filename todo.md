@@ -69,7 +69,7 @@
 - [x] Konwersacje: lista historii w sidebar chatu
 
 ## Faza 10: Rozbudowa autonomiczna (bez zewnętrznych kluczy)
-- [ ] Rate limiting per plan (middleware + 429 response)
+- [x] Rate limiting per plan (middleware + 429 response)
 - [x] Marketplace narzędzi - publiczny katalog z wyszukiwarką i filtrami
 - [x] System ocen wrapperów (ratings 1-5 + recenzje)
 - [x] Dark mode toggle
@@ -109,9 +109,21 @@
 - [x] Ulepszony CommandPalette - narzędzia + nawigacja + admin shortcuts
 - [x] Strona historii konwersacji /dashboard/conversations
 - [x] Strona porównania planów /pricing
-- [ ] Widget "Trending Tools" na landing page
-- [ ] Micro-animacje framer-motion w Dashboard
+- [x] Widget "Trending Tools" na landing page
+- [x] Micro-animacje framer-motion w Dashboard
 - [x] Strona "Ulubione narzędzia" /dashboard/favorites
 - [x] Wskaźnik użycia planu (progress bar) w Dashboard
-- [ ] Ulepszony AdminPanel - bulk delete wrapperów
+- [x] Ulepszony AdminPanel - bulk delete wrapperów
 - [x] Strona /dashboard/usage z wykresami użycia per narzędzie
+
+## Faza 13: Rozbudowa autonomiczna (iteracja 7)
+- [x] Trending Tools sekcja na landing page
+- [x] Social proof (liczniki użytkowników, requestów) na landing page
+- [x] Bulk delete wrapperów w AdminPanel
+- [x] Edycja wrappera inline w AdminPanel + podgląd marży real-time
+- [x] Micro-animacje framer-motion w Dashboard i Marketplace
+- [x] Strona /dashboard/tool/:slug/history (ToolHistory.tsx)
+- [x] Copy button w chat + Info link do ToolDetail
+- [x] Strona /about + /contact z formularzem
+- [x] Footer z linkami na wszystkich stronach publicznych
+- [x] Ulepszony formularz wrappera — podgląd marży w czasie rzeczywistym
