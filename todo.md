@@ -127,3 +127,11 @@
 - [x] Strona /about + /contact z formularzem
 - [x] Footer z linkami na wszystkich stronach publicznych
 - [x] Ulepszony formularz wrappera — podgląd marży w czasie rzeczywistym
+
+## Faza 14: 3 nowe funkcje (iteracja 8)
+- [x] Webhook notyfikacje in-app dla klientów przy nowym wrapperze
+- [x] Strona BYOK /dashboard/api-keys — własny klucz OpenAI użytkownika
+- [x] Embed widget — snippet <script> osadzający wrapper na zewnętrznej stronie
+- [x] Strona /embed/:wrapperId — publiczny iframe endpoint
+- [x] Generator kodu embed w AdminPanel
+- [x] Testy 6/6, TypeScript 0 błędów, checkpoint

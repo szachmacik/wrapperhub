@@ -14,6 +14,7 @@ import {
   changelogRouter,
   settingsRouter,
 } from "./featuresRouter";
+import { notificationsRouter, byokRouter, embedRouter } from "./notificationsRouter";
 
 // Seed default data on startup
 seedDefaultData().catch(console.error);
@@ -37,6 +38,9 @@ export const appRouter = router({
   tags: tagsRouter,
   changelog: changelogRouter,
   settings: settingsRouter,
+  notifications: notificationsRouter,
+  byok: byokRouter,
+  embed: embedRouter,
 });
 
 export type AppRouter = typeof appRouter;

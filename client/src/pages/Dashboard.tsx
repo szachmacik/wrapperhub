@@ -14,7 +14,7 @@ import { Settings as SettingsIcon, Globe } from "lucide-react";
 import {
   Bot, Code2, FileText, ImageIcon, Sparkles, LogOut,
   BarChart3, MessageSquare, Crown, ArrowRight, Zap, History, Rocket, User, Menu,
-  Heart, Activity,
+  Heart, Activity, Key, Puzzle, Bell,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
@@ -82,6 +82,15 @@ export default function Dashboard() {
           </Button>
           <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/dashboard/usage")}>
             <Activity className="h-4 w-4" /> Usage Stats
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/dashboard/notifications")}>
+            <Bell className="h-4 w-4" /> Notifications
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/dashboard/api-keys")}>
+            <Key className="h-4 w-4" /> API Keys (BYOK)
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/dashboard/embed")}>
+            <Puzzle className="h-4 w-4" /> Embed Widget
           </Button>
           {isAdmin && (
             <>

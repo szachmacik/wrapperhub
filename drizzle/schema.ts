@@ -233,3 +233,52 @@ export const wrapperFavorites = mysqlTable("wrapper_favorites", {
 
 export type WrapperFavorite = typeof wrapperFavorites.$inferSelect;
 export type InsertWrapperFavorite = typeof wrapperFavorites.$inferInsert;
+
+// ─── In-App Notifications (powiadomienia in-app dla klientów) ─────────────────
+export const inAppNotifications = mysqlTable("in_app_notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: mysqlEnum("type", ["info", "success", "warning", "new_tool"]).default("info").notNull(),
+  relatedWrapperId: int("relatedWrapperId").references(() => wrappers.id),
+  isRead: boolean("isRead").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type InAppNotification = typeof inAppNotifications.$inferSelect;
+export type InsertInAppNotification = typeof inAppNotifications.$inferInsert;
+
+// ─── User API Keys (BYOK — Bring Your Own Key) ────────────────────────────────
+export const userApiKeys = mysqlTable("user_api_keys", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  provider: varchar("provider", { length: 64 }).notNull(), // "openai", "anthropic", etc.
+  keyHash: varchar("keyHash", { length: 512 }).notNull(),  // encrypted/hashed key
+  keyPreview: varchar("keyPreview", { length: 16 }).notNull(), // "sk-...xxxx" last 4 chars
+  label: varchar("label", { length: 128 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  lastUsedAt: timestamp("lastUsedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserApiKey = typeof userApiKeys.$inferSelect;
+export type InsertUserApiKey = typeof userApiKeys.$inferInsert;
+
+// ─── Embed Tokens (tokeny dla embed widgetów) ─────────────────────────────────
+export const embedTokens = mysqlTable("embed_tokens", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  wrapperId: int("wrapperId").notNull().references(() => wrappers.id),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  label: varchar("label", { length: 128 }),
+  allowedOrigins: text("allowedOrigins"), // JSON array of allowed domains
+  requestCount: int("requestCount").default(0).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmbedToken = typeof embedTokens.$inferSelect;
+export type InsertEmbedToken = typeof embedTokens.$inferInsert;

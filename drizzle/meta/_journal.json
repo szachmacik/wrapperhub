@@ -22,6 +22,13 @@
       "when": 1772732981787,
       "tag": "0002_warm_loa",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1772983181018,
+      "tag": "0003_bizarre_thaddeus_ross",
+      "breakpoints": true
     }
   ]
 }

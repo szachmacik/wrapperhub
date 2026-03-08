@@ -11,8 +11,11 @@ import {
   apiKeys,
   changelog,
   conversations,
+  embedTokens,
+  inAppNotifications,
   plans,
   usageLogs,
+  userApiKeys,
   userPlans,
   userSettings,
   users,
@@ -533,4 +536,193 @@ export async function getMonthlyUsageCount(userId: number): Promise<number> {
       )
     );
   return rows.length;
+}
+
+// ─── In-App Notifications ─────────────────────────────────────────────────────
+export async function createNotification(data: {
+  userId: number;
+  title: string;
+  message: string;
+  type: "info" | "success" | "warning" | "new_tool";
+  relatedWrapperId?: number;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(inAppNotifications).values({
+    userId: data.userId,
+    title: data.title,
+    message: data.message,
+    type: data.type,
+    relatedWrapperId: data.relatedWrapperId,
+    isRead: false,
+  });
+}
+
+export async function broadcastNotificationToAllUsers(notification: {
+  title: string;
+  message: string;
+  type: "info" | "success" | "warning" | "new_tool";
+  relatedWrapperId?: number;
+}) {
+  const db = await getDb();
+  if (!db) return 0;
+  const allUsers = await db.select({ id: users.id }).from(users);
+  for (const { id: userId } of allUsers) {
+    await db.insert(inAppNotifications).values({
+      userId,
+      title: notification.title,
+      message: notification.message,
+      type: notification.type,
+      relatedWrapperId: notification.relatedWrapperId,
+      isRead: false,
+    });
+  }
+  return allUsers.length;
+}
+
+export async function getUserNotifications(userId: number, limit = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(inAppNotifications)
+    .where(eq(inAppNotifications.userId, userId))
+    .orderBy(desc(inAppNotifications.createdAt))
+    .limit(limit);
+}
+
+export async function markNotificationRead(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(inAppNotifications)
+    .set({ isRead: true })
+    .where(and(eq(inAppNotifications.id, id), eq(inAppNotifications.userId, userId)));
+}
+
+export async function markAllNotificationsRead(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(inAppNotifications)
+    .set({ isRead: true })
+    .where(eq(inAppNotifications.userId, userId));
+}
+
+export async function getUnreadNotificationCount(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(inAppNotifications)
+    .where(and(eq(inAppNotifications.userId, userId), eq(inAppNotifications.isRead, false)));
+  return Number(result[0]?.count ?? 0);
+}
+
+// ─── User API Keys (BYOK) ─────────────────────────────────────────────────────
+export async function getUserApiKeys(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(userApiKeys)
+    .where(eq(userApiKeys.userId, userId))
+    .orderBy(desc(userApiKeys.createdAt));
+}
+
+export async function addUserApiKey(data: {
+  userId: number;
+  provider: string;
+  keyHash: string;
+  keyPreview: string;
+  label?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(userApiKeys).values({
+    userId: data.userId,
+    provider: data.provider,
+    keyHash: data.keyHash,
+    keyPreview: data.keyPreview,
+    label: data.label,
+    isActive: true,
+  });
+}
+
+export async function deleteUserApiKey(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .delete(userApiKeys)
+    .where(and(eq(userApiKeys.id, id), eq(userApiKeys.userId, userId)));
+}
+
+export async function getActiveUserApiKey(userId: number, provider: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(userApiKeys)
+    .where(and(eq(userApiKeys.userId, userId), eq(userApiKeys.provider, provider), eq(userApiKeys.isActive, true)))
+    .limit(1);
+  return result[0] ?? null;
+}
+
+// ─── Embed Tokens ─────────────────────────────────────────────────────────────
+export async function getEmbedTokensForUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(embedTokens)
+    .where(eq(embedTokens.userId, userId))
+    .orderBy(desc(embedTokens.createdAt));
+}
+
+export async function createEmbedToken(data: {
+  userId: number;
+  wrapperId: number;
+  token: string;
+  label?: string;
+  allowedOrigins?: string[];
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(embedTokens).values({
+    userId: data.userId,
+    wrapperId: data.wrapperId,
+    token: data.token,
+    label: data.label,
+    allowedOrigins: data.allowedOrigins ? JSON.stringify(data.allowedOrigins) : null,
+    isActive: true,
+    requestCount: 0,
+  });
+}
+
+export async function deleteEmbedToken(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .delete(embedTokens)
+    .where(and(eq(embedTokens.id, id), eq(embedTokens.userId, userId)));
+}
+
+export async function getEmbedTokenByToken(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(embedTokens)
+    .where(and(eq(embedTokens.token, token), eq(embedTokens.isActive, true)))
+    .limit(1);
+  return result[0] ?? null;
+}
+
+export async function incrementEmbedTokenRequestCount(token: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(embedTokens)
+    .set({ requestCount: sql`${embedTokens.requestCount} + 1` })
+    .where(eq(embedTokens.token, token));
 }

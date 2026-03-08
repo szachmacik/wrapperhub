@@ -27,6 +27,9 @@ import PricingComparison from "./pages/PricingComparison";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import ToolHistory from "./pages/ToolHistory";
+import ApiKeys from "./pages/ApiKeys";
+import EmbedWidget from "./pages/EmbedWidget";
+import NotificationsPage from "./pages/NotificationsPage";
 
 function Router() {
   return (
@@ -69,6 +72,11 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/settings" component={Settings} />
       <Route path="/onboarding" component={Onboarding} />
+
+      {/* BYOK, Embed, Notifications */}
+      <Route path="/dashboard/api-keys" component={ApiKeys} />
+      <Route path="/dashboard/embed" component={EmbedWidget} />
+      <Route path="/dashboard/notifications" component={NotificationsPage} />
 
       {/* Admin */}
       <Route path="/admin" component={AdminPanel} />
