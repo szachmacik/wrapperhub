@@ -32,6 +32,11 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  // Health check endpoint (required by Coolify / Docker HEALTHCHECK)
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", timestamp: Date.now() });
+  });
+
   // Stripe webhook MUST be registered before express.json() for raw body access
   app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), handleStripeWebhook);
   // Streaming chat endpoint (SSE)

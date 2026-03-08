@@ -24,7 +24,11 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/drizzle ./drizzle
 COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 
+# Health check (required by Coolify / Traefik)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget -qO- http://localhost:${PORT:-3000}/api/health || exit 1
+
 EXPOSE 3000
 
-# Run migrations then start
-CMD ["sh", "-c", "npx drizzle-kit migrate && node dist/index.js"]
+# Run migrations then start server
+CMD ["sh", "-c", "node_modules/.bin/drizzle-kit migrate && node dist/index.js"]
