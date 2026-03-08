@@ -135,3 +135,24 @@
 - [x] Strona /embed/:wrapperId — publiczny iframe endpoint
 - [x] Generator kodu embed w AdminPanel
 - [x] Testy 6/6, TypeScript 0 błędów, checkpoint
+
+## Faza 15: Nowe funkcje + Autodeployment
+
+### Nowe funkcje
+- [ ] Strona /dashboard/referral — program poleceń z linkiem afiliacyjnym
+- [ ] Widget "What's New" — popup z nowościami dla powracających użytkowników
+- [ ] Strona /dashboard/leaderboard — ranking użytkowników wg aktywności
+- [ ] Admin: strona /admin/changelog — zarządzanie changelogiem z UI
+- [ ] Ulepszony ToolPage — tryb pełnoekranowy (fullscreen chat)
+- [ ] Strona /dashboard/integrations — lista dostępnych integracji i webhooków
+- [ ] Footer globalny na wszystkich stronach publicznych
+- [ ] Animacje framer-motion w Marketplace i ToolDetail
+
+### Autodeployment
+- [ ] Dockerfile dla WrapperHub (multi-stage, node:22-alpine)
+- [ ] docker-entrypoint.sh (migrate + start)
+- [ ] GitHub repo: szachmacik/wrapperhub (prywatne)
+- [ ] Push kodu do GitHub
+- [ ] Coolify deploy → wrapperhub.ofshore.dev
+- [ ] Bezpieczna strona do wpisania COOLIFY_TOKEN
+- [ ] Weryfikacja deploymentu

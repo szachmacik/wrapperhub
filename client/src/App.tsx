@@ -30,6 +30,10 @@ import ToolHistory from "./pages/ToolHistory";
 import ApiKeys from "./pages/ApiKeys";
 import EmbedWidget from "./pages/EmbedWidget";
 import NotificationsPage from "./pages/NotificationsPage";
+import Referral from "./pages/Referral";
+import Leaderboard from "./pages/Leaderboard";
+import Integrations from "./pages/Integrations";
+import { WhatsNew } from "./components/WhatsNew";
 
 function Router() {
   return (
@@ -77,6 +81,9 @@ function Router() {
       <Route path="/dashboard/api-keys" component={ApiKeys} />
       <Route path="/dashboard/embed" component={EmbedWidget} />
       <Route path="/dashboard/notifications" component={NotificationsPage} />
+      <Route path="/dashboard/referral" component={Referral} />
+      <Route path="/dashboard/leaderboard" component={Leaderboard} />
+      <Route path="/dashboard/integrations" component={Integrations} />
 
       {/* Admin */}
       <Route path="/admin" component={AdminPanel} />
@@ -96,6 +103,7 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster richColors position="top-right" />
+          <WhatsNew />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

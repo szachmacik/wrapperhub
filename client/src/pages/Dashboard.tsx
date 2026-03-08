@@ -14,7 +14,7 @@ import { Settings as SettingsIcon, Globe } from "lucide-react";
 import {
   Bot, Code2, FileText, ImageIcon, Sparkles, LogOut,
   BarChart3, MessageSquare, Crown, ArrowRight, Zap, History, Rocket, User, Menu,
-  Heart, Activity, Key, Puzzle, Bell,
+  Heart, Activity, Key, Puzzle, Bell, Gift, Trophy,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
@@ -91,6 +91,15 @@ export default function Dashboard() {
           </Button>
           <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/dashboard/embed")}>
             <Puzzle className="h-4 w-4" /> Embed Widget
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/dashboard/integrations")}>
+            <Zap className="h-4 w-4" /> Integrations
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/dashboard/referral")}>
+            <Gift className="h-4 w-4" /> Referral
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate("/dashboard/leaderboard")}>
+            <Trophy className="h-4 w-4" /> Leaderboard
           </Button>
           {isAdmin && (
             <>
