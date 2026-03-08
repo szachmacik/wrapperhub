@@ -6,6 +6,8 @@ WORKDIR /app
 # ─── Dependencies ─────────────────────────────────────────────────────────────
 FROM base AS deps
 COPY package.json pnpm-lock.yaml* ./
+# Copy patches dir required by pnpm patchedDependencies
+COPY patches ./patches
 RUN pnpm install --frozen-lockfile
 
 # ─── Build ────────────────────────────────────────────────────────────────────
