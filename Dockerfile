@@ -32,5 +32,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 EXPOSE 3000
 
-# Run migrations then start server
-CMD ["sh", "-c", "node_modules/.bin/drizzle-kit migrate && node dist/index.js"]
+# Start server (migrations managed by Manus platform)
+CMD ["node", "dist/index.js"]
