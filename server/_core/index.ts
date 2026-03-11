@@ -32,6 +32,46 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  // ─── Security Headers ────────────────────────────────────────────────────────
+  // Remove X-Powered-By to avoid fingerprinting
+  app.disable("x-powered-by");
+
+  // Apply security headers
+  app.use((_req, res, next) => {
+    // Prevent clickjacking
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    // Prevent MIME type sniffing
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    // XSS protection for older browsers
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    // HSTS - force HTTPS for 2 years
+    res.setHeader("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+    // Referrer policy
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    // Permissions policy
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+    // Content Security Policy
+    res.setHeader(
+      "Content-Security-Policy",
+      [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' https://fonts.gstatic.com data:",
+        "img-src 'self' data: blob: https: http:",
+        "connect-src 'self' https://api.stripe.com https://*.supabase.co wss://*.supabase.co",
+        "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'self'",
+        "upgrade-insecure-requests",
+      ].join("; ")
+    );
+    next();
+  });
+
   // Health check endpoint (required by Coolify / Docker HEALTHCHECK)
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", timestamp: Date.now() });
