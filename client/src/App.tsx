@@ -34,10 +34,12 @@ import Referral from "./pages/Referral";
 import Leaderboard from "./pages/Leaderboard";
 import Integrations from "./pages/Integrations";
 import { WhatsNew } from "./components/WhatsNew";
+import Login from "@/pages/Login";
 
 function Router() {
   return (
     <Switch>
+        <Route path="/login" component={Login} />
       {/* Public */}
       <Route path="/" component={Home} />
       <Route path="/marketplace" component={Marketplace} />

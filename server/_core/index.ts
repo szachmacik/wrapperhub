@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic } from "./vite";
 import { handleStripeWebhook } from "../stripeRouter";
 import { handleStreamChat } from "../streamRouter";
+import { registerSupabaseAuthRoutes } from "./supabaseAuth";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -100,6 +101,7 @@ async function startServer() {
     const { setupVite } = await import("./vite");
 
     await setupVite(app, server);
+  registerSupabaseAuthRoutes(app);
   } else {
     serveStatic(app);
   }
